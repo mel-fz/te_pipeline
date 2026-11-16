@@ -221,3 +221,32 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- TE project: never commit data or results ---
+*.bam
+*.bai
+*.fastq
+*.fastq.gz
+*.fq
+*.pickle
+*.mtx
+*.h5ad
+*.tar.gz
+
+# annotations / sample metadata
+cell_annotations.tsv
+valid_files*.txt
+metadata/
+
+# pipeline outputs and scratch
+results/
+tmp/
+production_batch_*/
+reference/
+
+# Terra / Cromwell run artifacts
+cromwell-executions/
+cromwell-workflow-logs/
+
+# notebooks: commit only on purpose, never with outputs
+.ipynb_checkpoints/
