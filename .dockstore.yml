@@ -1,0 +1,5 @@
+version: 1.2
+workflows:
+  - subclass: WDL
+    name: prepare_sample
+    primaryDescriptorPath: /wdl/prepare_sample.wdl
