@@ -250,3 +250,9 @@ cromwell-workflow-logs/
 
 # notebooks: commit only on purpose, never with outputs
 .ipynb_checkpoints/
+!.github/
+!.github/**
+!docker/*.yml
+!.github/
+!.github/**
+!docker/*.yml
