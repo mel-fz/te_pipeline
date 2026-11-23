@@ -3,3 +3,6 @@ workflows:
   - subclass: WDL
     name: prepare_sample
     primaryDescriptorPath: /wdl/prepare_sample.wdl
+  - subclass: WDL
+    name: run_stellarscope
+    primaryDescriptorPath: /wdl/run_stellarscope.wdl
