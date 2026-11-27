@@ -1,8 +1,9 @@
 version 1.0
 
 # PrepareSample (work in progress): BAM -> barcodes -> cell-type labels.
-# Notebook equivalents: ExtractBarcodes = Cell 4; MakeLabels = Cells 1 and 5;
-# SubsetAndUnalign = Cells 6-7.
+# Sample validity (valid-files list) is checked BEFORE the run, when building the sample table.
+# Notebook equivalents: ExtractBarcodes = Cell 4; MakeLabels = Cell 5;
+# SubsetAndUnalign = Cells 6-7; Align = Cell 9 (STAR) and Cell 11 (checks).
 
 task ExtractBarcodes {
   input {
@@ -27,6 +28,7 @@ task ExtractBarcodes {
     cpu: 2
     memory: "4 GB"
     disks: "local-disk 50 HDD"
+    maxRetries: 1
   }
 }
 
@@ -35,18 +37,16 @@ task MakeLabels {
     File script            # scripts/make_labels.py
     File bam_cbs
     File annotation        # cell_annotations.tsv
-    File valid_files       # valid_files_filtered.txt
     String sample_id
+    String tools_image
   }
 
   command <<<
     set -euo pipefail
-    pip install --quiet pandas==2.1.4
     python3 ~{script} \
       --bam_cbs ~{bam_cbs} \
       --annotation ~{annotation} \
       --sample_id ~{sample_id} \
-      --valid_files ~{valid_files} \
       --out_labels ~{sample_id}_labels.tsv \
       --out_barcodes ~{sample_id}_labeled_barcodes.txt \
       --out_batch ~{sample_id}_batch.txt
@@ -59,10 +59,11 @@ task MakeLabels {
   }
 
   runtime {
-    docker: "python:3.11-slim"
+    docker: tools_image
     cpu: 1
     memory: "8 GB"
     disks: "local-disk 20 HDD"
+    maxRetries: 1
   }
 }
 
@@ -80,7 +81,7 @@ task SubsetAndUnalign {
   command <<<
     set -euo pipefail
 
-    # keep only reads from labeled barcodes
+    # keep only reads from labeled barcodes (notebook Cell 6)
     samtools view -@ 4 -b -D CB:~{labeled_barcodes} ~{bam} -o labeled.bam
 
     # BAM -> FASTQ -> unaligned BAM, keeping CB and UM tags (notebook Cell 7)
@@ -109,8 +110,10 @@ task SubsetAndUnalign {
     cpu: 4
     memory: "8 GB"
     disks: "local-disk ~{disk_gb} HDD"
+    maxRetries: 1
   }
 }
+
 task Align {
   input {
     File unaligned_bam
@@ -165,6 +168,7 @@ task Align {
     cpu: threads
     memory: "40 GB"
     disks: "local-disk ~{disk_gb} HDD"
+    maxRetries: 1
   }
 }
 
@@ -173,7 +177,6 @@ workflow PrepareSample {
     File bam
     String sample_id
     File annotation
-    File valid_files
     File make_labels_script
     File star_index_tar
     String tools_image
@@ -186,8 +189,8 @@ workflow PrepareSample {
       script = make_labels_script,
       bam_cbs = ExtractBarcodes.barcodes,
       annotation = annotation,
-      valid_files = valid_files,
-      sample_id = sample_id
+      sample_id = sample_id,
+      tools_image = tools_image
   }
 
   call SubsetAndUnalign {
@@ -216,4 +219,3 @@ workflow PrepareSample {
     File star_log = Align.star_log
   }
 }
-
